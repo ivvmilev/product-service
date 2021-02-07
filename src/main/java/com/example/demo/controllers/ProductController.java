@@ -1,11 +1,10 @@
 package com.example.demo.controllers;
 
 import com.example.demo.ProductModelAssembler;
+import com.example.demo.dto.CategoryDto;
+import com.example.demo.dto.ProductDto;
 import com.example.demo.entities.Product;
-import com.example.demo.services.ExistingProductException;
-import com.example.demo.services.NotEnoughQuantityException;
-import com.example.demo.services.ProductNotFoundException;
-import com.example.demo.services.ProductService;
+import com.example.demo.services.*;
 import com.sun.istack.NotNull;
 import org.springframework.data.domain.Slice;
 import org.springframework.hateoas.CollectionModel;
@@ -40,46 +39,73 @@ public class ProductController
             @RequestParam(defaultValue = "1") int pageNumber
             , @RequestParam(defaultValue = "name") String sortField
             , @RequestParam(defaultValue = "asc") String order
+            , @RequestParam(defaultValue = "asc") String value
+            , @RequestParam(defaultValue = "asc") String operation
     )
     {
         return productService.findPaginated(pageNumber, sortField, order);
     }
 
-
-    @GetMapping("/login")
-    public String loginPage()
-    {
-        return "login";
+    @GetMapping("/categories")
+    public List<CategoryDto> getCategories(){
+        return productService.getCategories();
     }
 
     @GetMapping({"", "/"})
-    CollectionModel<EntityModel<Product>> all()
+    CollectionModel<EntityModel<ProductDto>> all()
     {
-        List<EntityModel<Product>> products = getAllProducts().stream()
+        List<EntityModel<ProductDto>> products = getAllProductsDto().stream()
                 .map(assembler::toModel)
                 .collect(Collectors.toList());
 
-        return CollectionModel.of(products, linkTo(methodOn(ProductController.class).getAllProducts()).withSelfRel());
+        return CollectionModel.of(products, linkTo(methodOn(ProductController.class).getAllProductsDto()).withSelfRel());
     }
 
-    public List<Product> getAllProducts()
+    public List<ProductDto> getAllProductsDto()
     {
-        return productService.getAllProducts();
+        return productService.getAllProducts()
+                .stream()
+                .map(product -> {
+                    ProductDto productDto = new ProductDto();
+                    try {
+                        productService.copyProps(product, productDto);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                    return productDto;
+                })
+                .collect(Collectors.toList());
     }
+
 
     @GetMapping("/product/{id}")
-    public EntityModel<Product> getOneProduct(@PathVariable Long id) throws ProductNotFoundException
+    public EntityModel<ProductDto> getOneProduct(@PathVariable Long id)
     {
-        Product user = productService.getProductById(id);
-
-        return assembler.toModel(user);
+        try
+        {
+            ProductDto product = productService.getProductByIdDto(id);
+            return assembler.toModel(product);
+        } catch (ProductNotFoundException e)
+        {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "Product not found");
+        }
     }
 
     @PostMapping("/product")
-    public ResponseEntity<?> saveProduct(@RequestBody @NotNull Product newProduct) throws ExistingProductException
+    public ResponseEntity<?> saveProduct(@RequestBody @NotNull ProductDto newProduct) throws ExistingProductException
     {
-        EntityModel<Product> entityModel = assembler.toModel(productService.createProduct(newProduct));
+        EntityModel<ProductDto> entityModel = assembler.toModel(productService.createProduct(newProduct));
 
+        return ResponseEntity
+                .created(entityModel.getRequiredLink(IanaLinkRelations.SELF).toUri())
+                .body(entityModel);
+    }
+
+    @PutMapping("/product/{id}")
+    public ResponseEntity<?> updateProduct(@PathVariable long id, @RequestBody ProductDto updateProduct)
+    {
+        EntityModel<ProductDto> entityModel = assembler.toModel(productService.updateProduct(updateProduct, id));
         return ResponseEntity
                 .created(entityModel.getRequiredLink(IanaLinkRelations.SELF).toUri())
                 .body(entityModel);
@@ -90,8 +116,9 @@ public class ProductController
     {
         try
         {
-            productService.orderProduct(id, orderQuantity);
-            EntityModel<Product> entityModel = assembler.toModel(productService.orderProduct(id, orderQuantity));
+            ProductDto product = productService.orderProduct(id, orderQuantity);
+
+            EntityModel<ProductDto> entityModel = assembler.toModel(product);
 
             return ResponseEntity
                     .created(entityModel.getRequiredLink(IanaLinkRelations.SELF).toUri())

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <changeSet author="JohnnyBravo (generated)" id="1612516230951-1">
+        <createTable tableName="category_dto">
+            <column name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="category_dto_pkey"/>
+            </column>
+            <column name="category_name" type="VARCHAR(255)"/>
+            <column name="products_available" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="JohnnyBravo (generated)" id="1612516230951-2">
+        <createTable tableName="orders">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="orders_pkey"/>
+            </column>
+            <column name="created_date" type="date"/>
+            <column name="last_modified_date" type="date"/>
+            <column name="product" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="product_id" type="BIGINT">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity" type="INTEGER">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+    <changeSet author="JohnnyBravo (generated)" id="1612516230951-3">
+        <createTable tableName="e_products">
+            <column autoIncrement="true" name="id" type="BIGINT">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="e_products_pkey"/>
+            </column>
+            <column name="category" type="VARCHAR(200)"/>
+            <column name="created_date" type="date"/>
+            <column name="description" type="VARCHAR(500)"/>
+            <column name="last_modified_date" type="date"/>
+            <column name="name" type="VARCHAR(100)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="quantity" type="INTEGER"/>
+        </createTable>
+    </changeSet>
+    <changeSet author="JohnnyBravo (generated)" id="1612516230951-4">
+        <createSequence cacheSize="1" cycle="false" dataType="bigint" incrementBy="1" maxValue="9223372036854775807" minValue="1" sequenceName="hibernate_sequence" startValue="1"/>
+    </changeSet>
+</databaseChangeLog>
