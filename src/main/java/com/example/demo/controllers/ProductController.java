@@ -1,10 +1,12 @@
 package com.example.demo.controllers;
 
-import com.example.demo.ProductModelAssembler;
 import com.example.demo.dto.CategoryDto;
 import com.example.demo.dto.ProductDto;
-import com.example.demo.entities.Product;
-import com.example.demo.services.*;
+import com.example.demo.exceptions.ExistingProductException;
+import com.example.demo.exceptions.NotEnoughQuantityException;
+import com.example.demo.exceptions.ProductNotFoundException;
+import com.example.demo.hateos.ProductModelAssembler;
+import com.example.demo.services.ProductService;
 import com.sun.istack.NotNull;
 import org.springframework.data.domain.Slice;
 import org.springframework.hateoas.CollectionModel;
@@ -24,7 +26,7 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 @RestController
 public class ProductController
 {
-    private final ProductService productService;
+    public final ProductService productService;
 
     private final ProductModelAssembler assembler;
 
@@ -34,47 +36,41 @@ public class ProductController
         this.assembler = assembler;
     }
 
-    @GetMapping("/product")
-    public Slice<Product> getProducts(
+    @GetMapping("/products")
+    public Slice<ProductDto> getProducts(
             @RequestParam(defaultValue = "1") int pageNumber
-            , @RequestParam(defaultValue = "name") String sortField
-            , @RequestParam(defaultValue = "asc") String order
-            , @RequestParam(defaultValue = "asc") String value
-            , @RequestParam(defaultValue = "asc") String operation
+            , @RequestParam(defaultValue = "asc") int pageSize
+            , @RequestParam(defaultValue = "name") String orderBy
+            , @RequestParam(defaultValue = "asc") String sortDirection
     )
     {
-        return productService.findPaginated(pageNumber, sortField, order);
+        return productService.findPaginated(pageNumber, pageSize, orderBy, sortDirection);
+    }
+
+    @GetMapping("/allproduct")
+    public List<ProductDto> getAllProducts(
+            @RequestParam(required = false, defaultValue = "") String field
+            , @RequestParam(required = false, defaultValue = "") String operation
+            , @RequestParam(required = false, defaultValue = "") Object value
+    )
+    {
+        return productService.listAllQueried(field, operation, value);
     }
 
     @GetMapping("/categories")
-    public List<CategoryDto> getCategories(){
+    public List<CategoryDto> getCategories()
+    {
         return productService.getCategories();
     }
 
     @GetMapping({"", "/"})
     CollectionModel<EntityModel<ProductDto>> all()
     {
-        List<EntityModel<ProductDto>> products = getAllProductsDto().stream()
+        List<EntityModel<ProductDto>> products = productService.getProductDto().stream()
                 .map(assembler::toModel)
                 .collect(Collectors.toList());
 
-        return CollectionModel.of(products, linkTo(methodOn(ProductController.class).getAllProductsDto()).withSelfRel());
-    }
-
-    public List<ProductDto> getAllProductsDto()
-    {
-        return productService.getAllProducts()
-                .stream()
-                .map(product -> {
-                    ProductDto productDto = new ProductDto();
-                    try {
-                        productService.copyProps(product, productDto);
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                    return productDto;
-                })
-                .collect(Collectors.toList());
+        return CollectionModel.of(products, linkTo(methodOn(ProductController.class).productService.getProductDto()).withSelfRel());
     }
 
 

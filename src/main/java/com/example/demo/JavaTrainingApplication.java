@@ -11,16 +11,6 @@ import org.springframework.web.client.RestTemplate;
 @EnableEurekaClient
 public class JavaTrainingApplication
 {
-
-//    @Bean
-//    public Docket api() {
-//        return new Docket(DocumentationType.SWAGGER_2)
-//                .select()
-//                .apis(RequestHandlerSelectors.any())
-//                .paths(PathSelectors.any())
-//                .build();
-//    }
-
     @Bean
     @LoadBalanced
     public RestTemplate getRestTemplate(){

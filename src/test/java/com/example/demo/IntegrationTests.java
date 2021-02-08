@@ -1,5 +1,6 @@
 package com.example.demo;
 
+import com.example.demo.dto.ProductDto;
 import com.example.demo.entities.Product;
 import com.example.demo.repositories.ProductRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -62,9 +63,9 @@ public class IntegrationTests
         assertThat(Objects.requireNonNull(productEntity).getName()).isEqualTo(name);
     }
 
-    private Product saveProduct(String name) throws Exception
+    private ProductDto saveProduct(String name) throws Exception
     {
-        Product product = new Product();
+        ProductDto product = new ProductDto();
         product.setName(name);
         product.setQuantity(155);
         product.setCreatedDate(LocalDate.now());
@@ -77,7 +78,7 @@ public class IntegrationTests
         MvcResult result = resultActions.andReturn();
         String contentAsString = result.getResponse().getContentAsString();
 
-        return objectMapper.readValue(contentAsString, Product.class);
+        return objectMapper.readValue(contentAsString, ProductDto.class);
     }
 
     @Test
@@ -86,17 +87,17 @@ public class IntegrationTests
     {
         String name = "Laptop Lenovo";
 
-        Product savedProduct = saveProduct(name);
+        ProductDto savedProduct = saveProduct(name);
 
         mockMvc.perform(delete("/product/delete/{id}", savedProduct.getId())
                 .contentType("application/json"));
 
-        Optional<Product> productAfterDelete = Optional.ofNullable(getProductById(savedProduct.getId()));
+        Optional<ProductDto> productAfterDelete = Optional.ofNullable(getProductById(savedProduct.getId()));
 
         assert (productAfterDelete.isEmpty());
     }
 
-    private Product getProductById(long id) throws Exception
+    private ProductDto getProductById(long id) throws Exception
     {
         ResultActions resultActions = mockMvc.perform(get("/product/{id}", id)
                 .contentType("application/json"));
@@ -106,7 +107,7 @@ public class IntegrationTests
 
         if (!contentAsString.isEmpty())
         {
-            return objectMapper.readValue(contentAsString, Product.class);
+            return objectMapper.readValue(contentAsString, ProductDto.class);
         } else
         {
             return null;

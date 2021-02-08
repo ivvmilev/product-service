@@ -4,16 +4,19 @@ import com.example.demo.dto.CategoryDto;
 import com.example.demo.dto.ProductDto;
 import com.example.demo.dto.ProductOrder;
 import com.example.demo.entities.Product;
+import com.example.demo.exceptions.Exceptions;
+import com.example.demo.exceptions.ExistingProductException;
+import com.example.demo.exceptions.NotEnoughQuantityException;
+import com.example.demo.exceptions.ProductNotFoundException;
+import com.example.demo.quering.ProductSpecification;
+import com.example.demo.quering.SearchCriteria;
 import com.example.demo.repositories.ProductRepository;
 import com.sun.istack.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -24,6 +27,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -140,6 +144,22 @@ public class ProductService
         }
     }
 
+    public List<ProductDto> getProductDto()
+    {
+        return getAllProducts()
+                .stream()
+                .map(product -> {
+                    ProductDto productDto = new ProductDto();
+                    try {
+                        copyProps(product, productDto);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                    return productDto;
+                })
+                .collect(Collectors.toList());
+    }
+
     public List<CategoryDto> getCategories()
     {
         return productRepository.getCategories();
@@ -148,6 +168,11 @@ public class ProductService
     public List<Product> getAllProducts()
     {
         return productRepository.findAll();
+    }
+
+    public List<ProductDto> getAllFiltered(ProductSpecification productSpecification)
+    {
+        return getProductDto(productRepository.findAll(productSpecification));
     }
 
     public Product getProductById(Long id) throws ProductNotFoundException
@@ -163,14 +188,45 @@ public class ProductService
         return productDto;
     }
 
-    public Page<Product> findPaginated(int pageNo, String sortField, String sortDirection)
+    public Page<ProductDto> findPaginated(int pageNo, int pageSize, String orderBy, String sortDirection)
     {
-        final int pageSize = 10;
-        Sort sort = sortDirection.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(sortField).ascending() :
-                Sort.by(sortField).descending();
+        Sort sort = sortDirection.equalsIgnoreCase(Sort.Direction.ASC.name()) ? Sort.by(orderBy).ascending() :
+                Sort.by(orderBy).descending();
 
         Pageable pageable = PageRequest.of(pageNo - 1, pageSize, sort);
-        return this.productRepository.findAll(pageable);
+        return new PageImpl<>(getProductDto(this.productRepository.findAll(pageable).getContent()));
+    }
+
+    public List<ProductDto> getProductDto(List<Product> products)
+    {
+        List<Product> productsList = products;
+
+        if (productsList == null)
+        {
+            productsList = getAllProducts();
+        }
+
+        return productsList.stream()
+                .map(product ->
+                {
+                    ProductDto productDto = new ProductDto();
+                    try
+                    {
+                        copyProps(product, productDto);
+                    } catch (Exception ex)
+                    {
+                        ex.printStackTrace();
+                    }
+                    return productDto;
+                })
+                .collect(Collectors.toList());
+    }
+
+    public List<ProductDto> listAllQueried(String field, String operation, Object value)
+    {
+        ProductSpecification spec =
+                new ProductSpecification(new SearchCriteria(field, operation, value));
+        return getAllFiltered(spec);
     }
 
     public ProductDto updateProduct(ProductDto update, long id)

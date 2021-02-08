@@ -1,8 +1,10 @@
 package com.example.demo.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
+@AllArgsConstructor
 public class ProductOrder
 {
     private long productId;
@@ -10,11 +12,4 @@ public class ProductOrder
     private long quantity;
 
     private String productName;
-
-    public ProductOrder(long id, int quantity, String productName)
-    {
-        this.productId = id;
-        this.quantity = quantity;
-        this.productName = productName;
-    }
 }

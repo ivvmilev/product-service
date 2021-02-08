@@ -1,8 +1,8 @@
-package com.example.demo;
+package com.example.demo.hateos;
 
 import com.example.demo.controllers.ProductController;
 import com.example.demo.dto.ProductDto;
-import com.example.demo.entities.Product;
+import com.example.demo.services.ProductService;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.server.RepresentationModelAssembler;
 import org.springframework.stereotype.Component;
@@ -15,6 +15,13 @@ import static org.springframework.hateoas.server.reactive.WebFluxLinkBuilder.met
 @Component
 public class ProductModelAssembler implements RepresentationModelAssembler<ProductDto, EntityModel<ProductDto>>
 {
+    private final ProductService productService;
+
+    public ProductModelAssembler(ProductService productService)
+    {
+        this.productService = productService;
+    }
+
     @Override
     @Nonnull
     public EntityModel<ProductDto> toModel(@Nonnull ProductDto product)
@@ -23,6 +30,6 @@ public class ProductModelAssembler implements RepresentationModelAssembler<Produ
                 linkTo(methodOn(ProductController.class)
                         .getOneProduct(product.getId())).withSelfRel(),
                 linkTo(methodOn(ProductController.class)
-                        .getAllProductsDto()).withRel("products"));
+                        .productService.getProductDto()).withRel("products"));
     }
 }
