@@ -34,22 +34,16 @@ import java.util.stream.Collectors;
 public class ProductService
 {
     @Autowired
-    private ProductRepository productRepository;
+    private final ProductRepository productRepository;
 
-    private static final Logger log = LoggerFactory.getLogger(ProductService.class);
+    private final RestTemplate restTemplate;
 
-    public ProductService(ProductRepository productRepository)
+    public ProductService(ProductRepository productRepository, RestTemplate restTemplate)
     {
         this.productRepository = productRepository;
+        this.restTemplate = restTemplate;
     }
 
-    public ProductService()
-    {
-
-    }
-
-    @Autowired
-    private RestTemplate restTemplate;
 
     public ProductDto createProduct(@NotNull ProductDto productDto) throws ExistingProductException
     {
@@ -144,21 +138,7 @@ public class ProductService
         }
     }
 
-    public List<ProductDto> getProductDto()
-    {
-        return getAllProducts()
-                .stream()
-                .map(product -> {
-                    ProductDto productDto = new ProductDto();
-                    try {
-                        copyProps(product, productDto);
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                    }
-                    return productDto;
-                })
-                .collect(Collectors.toList());
-    }
+
 
     public List<CategoryDto> getCategories()
     {

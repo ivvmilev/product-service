@@ -47,7 +47,7 @@ public class ProductController
         return productService.findPaginated(pageNumber, pageSize, orderBy, sortDirection);
     }
 
-    @GetMapping("/allproduct")
+    @GetMapping("/allproducts")
     public List<ProductDto> getAllProducts(
             @RequestParam(required = false, defaultValue = "") String field
             , @RequestParam(required = false, defaultValue = "") String operation
@@ -66,11 +66,30 @@ public class ProductController
     @GetMapping({"", "/"})
     CollectionModel<EntityModel<ProductDto>> all()
     {
-        List<EntityModel<ProductDto>> products = productService.getProductDto().stream()
+        List<EntityModel<ProductDto>> products = getProductDto().stream()
                 .map(assembler::toModel)
                 .collect(Collectors.toList());
 
-        return CollectionModel.of(products, linkTo(methodOn(ProductController.class).productService.getProductDto()).withSelfRel());
+        return CollectionModel.of(products, linkTo(methodOn(ProductController.class).getProductDto()).withSelfRel());
+    }
+
+    public List<ProductDto> getProductDto()
+    {
+        return productService.getAllProducts()
+                .stream()
+                .map(product ->
+                {
+                    ProductDto productDto = new ProductDto();
+                    try
+                    {
+                        productService.copyProps(product, productDto);
+                    } catch (Exception ex)
+                    {
+                        ex.printStackTrace();
+                    }
+                    return productDto;
+                })
+                .collect(Collectors.toList());
     }
 
 
