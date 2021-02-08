@@ -1,7 +1,6 @@
 package com.example.demo;
 
 import com.example.demo.entities.Product;
-
 import com.example.demo.quering.ProductSpecification;
 import com.example.demo.quering.SearchCriteria;
 import com.example.demo.repositories.ProductRepository;
