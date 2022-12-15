@@ -1,11 +1,11 @@
-package com.example.demo.controllers;
+package com.example.product.controllers;
 
-import com.example.demo.ProductModelAssembler;
-import com.example.demo.entities.Product;
-import com.example.demo.services.ExistingProductException;
-import com.example.demo.services.NotEnoughQuantityException;
-import com.example.demo.services.ProductNotFoundException;
-import com.example.demo.services.ProductService;
+import com.example.product.entities.Product;
+import com.example.product.exceptions.ExistingProductException;
+import com.example.product.exceptions.NotEnoughQuantityException;
+import com.example.product.exceptions.ProductNotFoundException;
+import com.example.product.services.ProductModelAssembler;
+import com.example.product.services.ProductService;
 import com.sun.istack.NotNull;
 import org.springframework.data.domain.Slice;
 import org.springframework.hateoas.CollectionModel;
@@ -23,61 +23,46 @@ import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
-public class ProductController
-{
+public class ProductController {
     private final ProductService productService;
 
     private final ProductModelAssembler assembler;
 
-    public ProductController(ProductService productService, ProductModelAssembler assembler)
-    {
+    public ProductController(ProductService productService, ProductModelAssembler assembler) {
         this.productService = productService;
         this.assembler = assembler;
     }
 
     @GetMapping("/product")
-    public Slice<Product> getProducts(
-            @RequestParam(defaultValue = "1") int pageNumber
-            , @RequestParam(defaultValue = "name") String sortField
-            , @RequestParam(defaultValue = "asc") String order
-    )
-    {
+    public Slice<Product> getProducts(@RequestParam(defaultValue = "1") int pageNumber,
+                                      @RequestParam(defaultValue = "name") String sortField,
+                                      @RequestParam(defaultValue = "asc") String order) {
         return productService.findPaginated(pageNumber, sortField, order);
     }
 
 
     @GetMapping("/login")
-    public String loginPage()
-    {
+    public String loginPage() {
         return "login";
     }
 
     @GetMapping({"", "/"})
-    CollectionModel<EntityModel<Product>> all()
-    {
-        List<EntityModel<Product>> products = getAllProducts().stream()
+    CollectionModel<EntityModel<Product>> all() {
+        List<EntityModel<Product>> products = productService.getAllProducts().stream()
                 .map(assembler::toModel)
                 .collect(Collectors.toList());
-
-        return CollectionModel.of(products, linkTo(methodOn(ProductController.class).getAllProducts()).withSelfRel());
-    }
-
-    public List<Product> getAllProducts()
-    {
-        return productService.getAllProducts();
+        return CollectionModel.of(products, linkTo(methodOn(ProductService.class).getAllProducts()).withSelfRel());
     }
 
     @GetMapping("/product/{id}")
-    public EntityModel<Product> getOneProduct(@PathVariable Long id) throws ProductNotFoundException
-    {
+    public EntityModel<Product> getOneProduct(@PathVariable Long id) throws ProductNotFoundException {
         Product user = productService.getProductById(id);
 
         return assembler.toModel(user);
     }
 
     @PostMapping("/product")
-    public ResponseEntity<?> saveProduct(@RequestBody @NotNull Product newProduct) throws ExistingProductException
-    {
+    public ResponseEntity<?> saveProduct(@RequestBody @NotNull Product newProduct) throws ExistingProductException {
         EntityModel<Product> entityModel = assembler.toModel(productService.createProduct(newProduct));
 
         return ResponseEntity
@@ -86,38 +71,28 @@ public class ProductController
     }
 
     @PostMapping("/product/{id}/order/{orderQuantity}")
-    public ResponseEntity<?> orderProduct(@PathVariable long id, @PathVariable int orderQuantity)
-    {
-        try
-        {
+    public ResponseEntity<?> orderProduct(@PathVariable long id, @PathVariable int orderQuantity) {
+        try {
             productService.orderProduct(id, orderQuantity);
             EntityModel<Product> entityModel = assembler.toModel(productService.orderProduct(id, orderQuantity));
 
             return ResponseEntity
                     .created(entityModel.getRequiredLink(IanaLinkRelations.SELF).toUri())
                     .body(entityModel);
-        } catch (ProductNotFoundException e)
-        {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Product not found");
-        } catch (NotEnoughQuantityException e)
-        {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Product quantity exceed");
+        } catch (ProductNotFoundException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found");
+        } catch (NotEnoughQuantityException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product quantity exceed");
         }
     }
 
     @DeleteMapping("/product/delete/{id}")
-    public ResponseEntity<?> deleteProduct(@PathVariable(value = "id") long id)
-    {
-        try
-        {
+    public ResponseEntity<?> deleteProduct(@PathVariable(value = "id") long id) {
+        try {
             productService.deleteProduct(id);
             return ResponseEntity.noContent().build();
-        } catch (ProductNotFoundException e)
-        {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "Product not found");
+        } catch (ProductNotFoundException e) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found");
         }
     }
 }
