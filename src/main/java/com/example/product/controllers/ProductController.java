@@ -6,7 +6,8 @@ import com.example.product.exceptions.NotEnoughQuantityException;
 import com.example.product.exceptions.ProductNotFoundException;
 import com.example.product.services.ProductModelAssembler;
 import com.example.product.services.ProductService;
-import com.sun.istack.NotNull;
+import com.sun.istack
+        .NotNull;
 import org.springframework.data.domain.Slice;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
